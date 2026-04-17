@@ -31,11 +31,14 @@ class MainActivity : ComponentActivity() {
             ) {
                 composable (route = "login"){
                     LoginScreen(onLoginSuccess = {}, onNavigateToRegister = {})
+                    myNavController.navigate("register")
 
 
                 }
                 composable (route = "register"){
-                    RegisterScreen(onRegisterSuccess = {}, onNavigateToLogin = {})
+                    RegisterScreen(onRegisterSuccess = {}, onNavigateToLogin = {},
+                        onBackClick = {})
+                    myNavController.navigate("login")
                 }
             }
 
