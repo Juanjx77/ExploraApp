@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "290614377933",
+    "project_id": "loginfirebase-ed32c",
+    "storage_bucket": "loginfirebase-ed32c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:290614377933:android:40c008a2a155e725fa5884",
+        "android_client_info": {
+          "package_name": "com.example.juan.mora.exploraapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNvq59l5Vq4fRvlkjFMPnQK8wXdRh_eqQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
