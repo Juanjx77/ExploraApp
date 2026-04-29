@@ -1,6 +1,6 @@
-package com.example.juan.mora.exploraapp
+package com.example.juan.mora.exploraapp.ui.elements
+import android.app.Activity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,17 +20,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.juan.mora.exploraapp.ui.theme.ExploraAppTheme
+import com.example.juan.mora.exploraapp.validateConfirmPassword
+import com.example.juan.mora.exploraapp.validateEmail
+import com.example.juan.mora.exploraapp.validateName
+import com.example.juan.mora.exploraapp.validatePassword
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.auth
 
 
 @Composable
@@ -39,12 +47,21 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {}
+
 ) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
     var acceptedTerms by remember { mutableStateOf(false) }
+    val auth = Firebase.auth
+    var inputName by remember { mutableStateOf("") }
+    var inputEmail by remember { mutableStateOf("") }
+    var inputPassword by remember { mutableStateOf("") }
+    var inputPasswordConfirmation by remember { mutableStateOf("") }
+    var nameError by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
+    var passwordConfirmationError by remember { mutableStateOf("") }
+    var registerError by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val activity = context as? Activity
 
     val primaryOrange = Color(0xFFE45D25)
     val lightGrayBg = Color(0xFFF8F9FE)
@@ -107,50 +124,59 @@ fun RegisterScreen(
             Column(modifier = Modifier.fillMaxWidth()) {
                 RegisterField(
                     label = "NOMBRE COMPLETO",
-                    value = name,
-                    onValueChange = { name = it },
+                    value = inputName,
+                    onValueChange = { inputName = it },
                     placeholder = "Tu nombre",
                     leadingIcon = Icons.Default.Person,
-                    inputBg = inputBg
+                    inputBg = inputBg,
+                    supportingText = nameError
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 RegisterField(
                     label = "CORREO ELECTRÓNICO",
-                    value = email,
-                    onValueChange = { email = it },
+                    value = inputEmail,
+                    onValueChange = { inputEmail = it },
                     placeholder = "hola@ejemplo.com",
                     leadingIcon = Icons.Default.Email,
-                    inputBg = inputBg
+                    inputBg = inputBg,
+                    supportingText = emailError
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 RegisterField(
                     label = "CONTRASEÑA",
-                    value = password,
-                    onValueChange = { password = it },
+                    value = inputPassword,
+                    onValueChange = { inputPassword = it },
                     placeholder = "........",
                     leadingIcon = Icons.Default.Lock,
                     inputBg = inputBg,
-                    isPassword = true
+                    isPassword = true,
+                    supportingText = passwordError
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 RegisterField(
                     label = "CONFIRMAR",
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
+                    value = inputPasswordConfirmation,
+                    onValueChange = { inputPasswordConfirmation = it },
                     placeholder = "........",
                     leadingIcon = Icons.Default.Refresh,
                     inputBg = inputBg,
-                    isPassword = true
+                    isPassword = true,
+                    supportingText = passwordConfirmationError
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // El error rojo de tu foto
+            if (registerError.isNotEmpty()) {
+                Text(registerError, color = Color.Red)
+            }
+
+            Spacer(modifier = Modifier.size(16.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -178,7 +204,38 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { onRegisterSuccess() },
+                onClick = {
+                    val isValidName = validateName(inputName).first
+                    val isValidEmail = validateEmail(inputEmail).first
+                    val isValidPassword = validatePassword(inputPassword).first
+                    val isValidConfirmPassword = validateConfirmPassword(
+                        inputPassword,
+                        inputPasswordConfirmation
+                    ).first
+
+                    nameError = validateName(inputName).second
+                    emailError = validateEmail(inputEmail).second
+                    passwordError = validatePassword(inputPassword).second
+                    passwordConfirmationError = validateConfirmPassword(
+                        inputPassword,
+                        inputPasswordConfirmation
+                    ).second
+
+                    if (isValidName && isValidEmail && isValidPassword && isValidConfirmPassword && acceptedTerms) {
+                        auth.createUserWithEmailAndPassword(inputEmail, inputPassword)
+                            .addOnCompleteListener(activity!!) { task ->
+                                if (task.isSuccessful) {
+                                    onRegisterSuccess()
+                                } else {
+                                    registerError = when (task.exception) {
+                                        is FirebaseAuthInvalidCredentialsException -> "Correo inválido"
+                                        is FirebaseAuthUserCollisionException -> "Correo ya registrado"
+                                        else -> "Error al registrarse"
+                                    }
+                                }
+                            }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
@@ -197,60 +254,14 @@ fun RegisterScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Registrarse", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("Registrarse", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(24.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.White)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), thickness = 0.5.dp, color = Color.LightGray)
-                Text(
-                    text = " O REGÍSTRATE CON ",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                HorizontalDivider(modifier = Modifier.weight(1f), thickness = 0.5.dp, color = Color.LightGray)
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                SocialButton(
-                    text = "Google",
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Email
-                )
-                SocialButton(
-                    text = "Apple",
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Lock
-                )
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Row(modifier = Modifier.padding(bottom = 16.dp)) {
-                Text(text = "¿Ya tienes una cuenta? ", color = Color.Gray, fontSize = 14.sp)
-                Text(
-                    text = "Inicia sesión",
-                    color = primaryOrange,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onNavigateToLogin() }
-                )
-            }
         }
     }
 }
@@ -261,46 +272,33 @@ fun RegisterField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    leadingIcon: ImageVector,
     inputBg: Color,
     modifier: Modifier = Modifier,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    supportingText: String = ""
 ) {
     Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Gray
-        )
+        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(28.dp)),
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)),
             placeholder = { Text(placeholder, color = Color.Gray) },
             leadingIcon = { Icon(leadingIcon, contentDescription = null, tint = Color.Gray) },
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+
+            supportingText = if (supportingText.isNotEmpty()) { { Text(supportingText) } } else null,
+            isError = supportingText.isNotEmpty(),
+            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = inputBg,
                 unfocusedContainerColor = inputBg,
-                disabledContainerColor = inputBg,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent
             ),
             singleLine = true
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegisterScreenPreview() {
-    ExploraAppTheme() {
-        RegisterScreen(onRegisterSuccess = {}, onNavigateToLogin = {})
     }
 }

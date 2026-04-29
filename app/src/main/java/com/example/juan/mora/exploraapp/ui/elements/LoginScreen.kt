@@ -1,5 +1,6 @@
-package com.example.juan.mora.exploraapp
+package com.example.juan.mora.exploraapp.ui.elements
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -27,15 +30,31 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.juan.mora.exploraapp.ui.theme.ExploraAppTheme
+import com.example.juan.mora.exploraapp.validateEmail
+import com.example.juan.mora.exploraapp.validatePassword
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.auth
 
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit
-) {
+    onNavigateToRegister: () -> Unit,
+
+
+
+    ) {
+    val auth = Firebase.auth
+    val activity = LocalView.current.context as Activity
+    var loginError by remember {mutableStateOf("")}
+    var inputEmail by remember {mutableStateOf("")}
+    var inputPassword by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var emailError by remember {mutableStateOf("")}
+    var passwordError by remember {mutableStateOf("")}
 
     val primaryOrange = Color(0xFFE45D25)
     val lightGrayBg = Color(0xFFF8F9FE)
@@ -125,14 +144,22 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = inputEmail,
+                    onValueChange = { inputEmail = it },
+                    isError = emailError.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
+
                         .clip(RoundedCornerShape(28.dp)),
                     placeholder = { Text("nombre@ejemplo.com", color = Color.Gray) },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.Gray) },
+                    supportingText = {
+                        if(emailError.isNotEmpty())
+                            Text(
+                                text = emailError,
+                                color = Color.Red
+                            )
+                    },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = inputBg,
                         unfocusedContainerColor = inputBg,
@@ -156,26 +183,35 @@ fun LoginScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color.Gray
                     )
+                    val onLoginSucces = null
                     Text(
                         text = "¿Olvidaste tu contraseña?",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryOrange,
-                        modifier = Modifier.clickable { /* Handle forgot password */ }
+                        modifier = Modifier.clickable(onClick = { onLoginSucces })
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = inputPassword,
+                    onValueChange = { inputPassword = it },
+                    isError = passwordError.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
                         .clip(RoundedCornerShape(28.dp)),
                     placeholder = { Text("........", color = Color.Gray) },
                     leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.Gray) },
                     trailingIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = Color.Gray) },
                     visualTransformation = PasswordVisualTransformation(),
+                    supportingText = {
+                        if(passwordError.isNotEmpty())
+                            Text (
+                                text = passwordError,
+                                color = Color.Red
+                            )
+                    },
+
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = inputBg,
@@ -187,10 +223,49 @@ fun LoginScreen(
                     singleLine = true
                 )
 
+                }
+
+
                 Spacer(modifier = Modifier.height(32.dp))
+                 if(loginError.isNotEmpty()) {
+                     Text(
+                         text = loginError,
+                         color = Color.Red,
+                         modifier = Modifier
+                             .fillMaxWidth()
+                             .padding(bottom = 8.dp)
+                     )
+                 }
+
+
+
 
                 Button(
-                    onClick = { onLoginSuccess() },
+                    onClick = {
+                        val isValidEmail:Boolean = validateEmail(inputEmail).first
+                        val isValidPassword = validatePassword(inputPassword).first
+                        emailError = validateEmail(inputEmail).second
+                        passwordError = validatePassword(inputPassword).second
+
+                        if (isValidEmail && isValidPassword) {
+                            auth.signInWithEmailAndPassword(inputEmail, inputPassword)
+                                .addOnCompleteListener(activity!!) { task ->
+                                    if (task.isSuccessful) {
+                                        onLoginSuccess()
+                                    } else {
+                                        loginError = when(task.exception){
+                                            is FirebaseAuthInvalidCredentialsException -> "Correo o contraseña incorrecta"
+                                            is FirebaseAuthInvalidUserException -> "No existe ninguna cuenta con este correo"
+                                            else -> "Error al iniciar sesión. Intenta de nuevo"
+                                    }
+
+                                }
+                            }
+
+
+                    }
+
+                         },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -217,6 +292,25 @@ fun LoginScreen(
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "¿No tienes cuenta? ",
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "Regístrate",
+                        color = primaryOrange,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { onNavigateToRegister() }
+                    )
+                }
+
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -249,22 +343,13 @@ fun LoginScreen(
 
 
 
-            Row {
-                Text(text = "¿No tienes cuenta? ", color = Color.Gray, fontSize = 14.sp)
-                Text(
-                    text = "Regístrate",
-                    color = primaryOrange,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onNavigateToRegister() }
-                )
-            }
+
         }
     }
-}
+
 
 @Composable
-fun SocialButton(text: String, modifier: Modifier = Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun SocialButton(text: String, modifier: Modifier = Modifier, icon: ImageVector) {
     OutlinedButton(
         onClick = { /* Handle social login */ },
         modifier = modifier.height(50.dp),

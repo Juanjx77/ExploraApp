@@ -4,7 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.juan.mora.exploraapp.ui.theme.ExploraAppTheme
+
+
 
 
 class MainActivity : ComponentActivity() {
@@ -12,9 +13,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ExploraAppTheme(){
-                NavigationApp()
-            }
+            NavigationApp()
+        }
+
+
+
 
 
 
@@ -22,5 +25,5 @@ class MainActivity : ComponentActivity() {
 
         }
     }
-}
+
 
