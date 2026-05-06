@@ -13,6 +13,7 @@ import com.example.juan.mora.exploraapp.ui.elements.RegisterScreen
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 
+
 @Composable
 fun NavigationApp() {
     val myNavController = rememberNavController()
@@ -71,7 +72,7 @@ fun NavigationApp() {
             )
         }
         composable  (route="add_touristic_place"){
-            AddTouristicPlaceScreen()
+            AddTouristicPlaceScreen (navController = myNavController)
         }
 
     }

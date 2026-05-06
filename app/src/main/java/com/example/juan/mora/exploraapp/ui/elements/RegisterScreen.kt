@@ -1,4 +1,5 @@
 package com.example.juan.mora.exploraapp.ui.elements
+
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -40,14 +41,12 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.auth
 
-
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {}
-
 ) {
     var acceptedTerms by remember { mutableStateOf(false) }
     val auth = Firebase.auth
@@ -60,6 +59,7 @@ fun RegisterScreen(
     var passwordError by remember { mutableStateOf("") }
     var passwordConfirmationError by remember { mutableStateOf("") }
     var registerError by remember { mutableStateOf("") }
+
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -78,6 +78,7 @@ fun RegisterScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
@@ -110,6 +111,7 @@ fun RegisterScreen(
                 color = Color.Black,
                 modifier = Modifier.align(Alignment.Start)
             )
+
             Text(
                 text = "Empieza tu aventura por el realismo mágico",
                 fontSize = 16.sp,
@@ -122,6 +124,7 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Column(modifier = Modifier.fillMaxWidth()) {
+
                 RegisterField(
                     label = "NOMBRE COMPLETO",
                     value = inputName,
@@ -171,7 +174,6 @@ fun RegisterScreen(
                 )
             }
 
-            // El error rojo de tu foto
             if (registerError.isNotEmpty()) {
                 Text(registerError, color = Color.Red)
             }
@@ -187,10 +189,16 @@ fun RegisterScreen(
                     onCheckedChange = { acceptedTerms = it },
                     colors = CheckboxDefaults.colors(checkedColor = primaryOrange)
                 )
+
                 Text(
                     text = buildAnnotatedString {
                         append("Acepto los ")
-                        withStyle(style = SpanStyle(color = primaryOrange, fontWeight = FontWeight.Bold)) {
+                        withStyle(
+                            style = SpanStyle(
+                                color = primaryOrange,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
                             append("términos y condiciones")
                         }
                         append(" así como el tratamiento de datos personales.")
@@ -208,18 +216,14 @@ fun RegisterScreen(
                     val isValidName = validateName(inputName).first
                     val isValidEmail = validateEmail(inputEmail).first
                     val isValidPassword = validatePassword(inputPassword).first
-                    val isValidConfirmPassword = validateConfirmPassword(
-                        inputPassword,
-                        inputPasswordConfirmation
-                    ).first
+                    val isValidConfirmPassword =
+                        validateConfirmPassword(inputPassword, inputPasswordConfirmation).first
 
                     nameError = validateName(inputName).second
                     emailError = validateEmail(inputEmail).second
                     passwordError = validatePassword(inputPassword).second
-                    passwordConfirmationError = validateConfirmPassword(
-                        inputPassword,
-                        inputPasswordConfirmation
-                    ).second
+                    passwordConfirmationError =
+                        validateConfirmPassword(inputPassword, inputPasswordConfirmation).second
 
                     if (isValidName && isValidEmail && isValidPassword && isValidConfirmPassword && acceptedTerms) {
                         auth.createUserWithEmailAndPassword(inputEmail, inputPassword)
@@ -254,14 +258,21 @@ fun RegisterScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Registrarse", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            "Registrarse",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
                     }
                 }
             }
-
-
         }
     }
 }
@@ -279,19 +290,34 @@ fun RegisterField(
     supportingText: String = ""
 ) {
     Column(modifier = modifier) {
-        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Gray
+        )
+
         Spacer(modifier = Modifier.height(8.dp))
+
         TextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp)),
             placeholder = { Text(placeholder, color = Color.Gray) },
-            leadingIcon = { Icon(leadingIcon, contentDescription = null, tint = Color.Gray) },
-
-            supportingText = if (supportingText.isNotEmpty()) { { Text(supportingText) } } else null,
+            leadingIcon = {
+                Icon(leadingIcon, contentDescription = null, tint = Color.Gray)
+            },
+            supportingText = if (supportingText.isNotEmpty()) {
+                { Text(supportingText) }
+            } else null,
             isError = supportingText.isNotEmpty(),
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text
+            ),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = inputBg,
                 unfocusedContainerColor = inputBg,
